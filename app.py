@@ -1,11 +1,10 @@
 import streamlit as st
 import base64
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -28,59 +27,36 @@ LinkedIn: https://www.linkedin.com/in/pavithra-senthilkumar-2803/
 GitHub: [Your GitHub URL]"""
 
 def get_credentials_from_secrets():
-    """Get credentials from Streamlit secrets"""
+    """Get credentials from Streamlit secrets or manual input"""
     try:
-        # Try to get from secrets first
         if "google_credentials" in st.secrets:
             return dict(st.secrets["google_credentials"])
-        return None
     except:
-        return None
+        pass
+    
+    # Check session state for manual token
+    if 'manual_credentials' in st.session_state:
+        return st.session_state.manual_credentials
+    
+    return None
 
 def get_gmail_service():
-    """Authenticate and return Gmail API service"""
-    creds = None
+    """Get Gmail service using stored token"""
+    if 'token_data' not in st.session_state:
+        return None
     
-    # Check if token exists in session state
-    if 'token_data' in st.session_state:
+    try:
         creds = Credentials.from_authorized_user_info(st.session_state.token_data, SCOPES)
-    
-    # If no valid credentials, authenticate
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-                # Save refreshed token
-                st.session_state.token_data = json.loads(creds.to_json())
-            except Exception as e:
-                st.error(f"Token refresh failed: {e}")
-                if 'token_data' in st.session_state:
-                    del st.session_state.token_data
-                return None
-        else:
-            # Get credentials from secrets or upload
-            credentials_data = get_credentials_from_secrets()
-            
-            if not credentials_data:
-                # Fall back to manual upload if secrets not configured
-                if 'credentials_data' not in st.session_state:
-                    return None
-                credentials_data = st.session_state.credentials_data
-            
-            try:
-                flow = InstalledAppFlow.from_client_config(
-                    credentials_data,
-                    SCOPES
-                )
-                creds = flow.run_local_server(port=0)
-                
-                # Save token to session
-                st.session_state.token_data = json.loads(creds.to_json())
-            except Exception as e:
-                st.error(f"Authentication failed: {e}")
-                return None
-    
-    return build('gmail', 'v1', credentials=creds)
+        
+        # Refresh if expired
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+            st.session_state.token_data = json.loads(creds.to_json())
+        
+        return build('gmail', 'v1', credentials=creds)
+    except Exception as e:
+        st.error(f"Failed to create Gmail service: {e}")
+        return None
 
 def create_message(to, subject, body):
     """Create email message"""
@@ -94,7 +70,7 @@ def schedule_email(service, to, subject, body, scheduled_time):
     try:
         message = create_message(to, subject, body)
         
-        # Convert scheduled time to RFC 3339 format
+        # Convert scheduled time to milliseconds since epoch
         scheduled_datetime = datetime.fromisoformat(scheduled_time)
         scheduled_send_time = int(scheduled_datetime.timestamp() * 1000)
         
@@ -109,7 +85,7 @@ def schedule_email(service, to, subject, body, scheduled_time):
         
         return True, f"Email scheduled successfully! Message ID: {sent_message['id']}"
     except HttpError as error:
-        return False, f"An error occurred: {error}"
+        return False, f"Gmail API error: {error}"
     except Exception as e:
         return False, f"Error: {str(e)}"
 
@@ -126,58 +102,88 @@ credentials_configured = get_credentials_from_secrets() is not None
 with st.sidebar:
     st.header("🔐 Authentication")
     
-    if not credentials_configured:
-        st.warning("⚠️ Credentials not configured in secrets")
+    # Method 1: Manual Token Entry (Simplest for Streamlit Cloud)
+    if 'token_data' not in st.session_state:
+        st.warning("⚠️ Not authenticated")
         
-        with st.expander("📖 How to configure secrets"):
+        st.markdown("### Option 1: Manual Token (Recommended)")
+        st.info("""
+        **One-time setup:**
+        1. Run the authentication script locally
+        2. Copy the generated token
+        3. Paste it here
+        """)
+        
+        with st.expander("📋 How to get your token"):
             st.markdown("""
-            ### Setup Instructions:
+            **Run this Python script on your local computer:**
             
-            1. Go to your Streamlit Cloud dashboard
-            2. Click on your app → Settings → Secrets
-            3. Add this format:
+            ```python
+            from google_auth_oauthlib.flow import InstalledAppFlow
+            import json
             
-            ```toml
-            [google_credentials]
-            type = "authorized_user"
-            client_id = "your-client-id"
-            client_secret = "your-client-secret"
-            redirect_uris = ["http://localhost"]
+            SCOPES = ['https://www.googleapis.com/auth/gmail.send',
+                      'https://www.googleapis.com/auth/gmail.compose']
+            
+            # Load your credentials.json
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+            
+            # Print token
+            print("\\nCopy this token:")
+            print(creds.to_json())
             ```
             
-            4. Copy values from your credentials.json file
-            5. Save and restart the app
+            **Then:**
+            - Copy the entire JSON output
+            - Paste it in the text area below
+            - Click "Save Token"
             """)
         
-        # Fallback: manual upload
-        st.info("Or upload manually (temporary):")
-        uploaded_file = st.file_uploader("Upload credentials.json", type=['json'])
+        token_input = st.text_area(
+            "Paste your token JSON here:",
+            height=150,
+            placeholder='{"token": "ya29...", "refresh_token": "...", ...}'
+        )
         
-        if uploaded_file is not None:
-            credentials_data = json.load(uploaded_file)
-            st.session_state.credentials_data = credentials_data
-            st.success("Credentials loaded temporarily!")
-            st.rerun()
-    else:
-        st.success("✅ Credentials configured in secrets")
-    
-    # Authentication status
-    if credentials_configured or 'credentials_data' in st.session_state:
-        if 'token_data' not in st.session_state:
-            if st.button("🔑 Authenticate with Gmail", type="primary"):
-                with st.spinner("Opening browser for authentication..."):
-                    service = get_gmail_service()
-                    if service:
-                        st.success("✅ Authenticated successfully!")
-                        st.rerun()
-        else:
-            st.success("✅ Authenticated with Gmail!")
-            st.info(f"Session active")
-            
-            if st.button("🔄 Re-authenticate"):
-                if 'token_data' in st.session_state:
-                    del st.session_state.token_data
+        if st.button("💾 Save Token", type="primary"):
+            try:
+                token_data = json.loads(token_input)
+                st.session_state.token_data = token_data
+                st.success("✅ Token saved! You're authenticated!")
                 st.rerun()
+            except json.JSONDecodeError:
+                st.error("❌ Invalid JSON. Please check your token format.")
+        
+        st.markdown("---")
+        
+        # Method 2: OAuth URL (Alternative)
+        st.markdown("### Option 2: OAuth Link")
+        
+        if credentials_configured:
+            credentials = get_credentials_from_secrets()
+            if credentials and 'installed' in credentials:
+                client_id = credentials['installed']['client_id']
+                
+                oauth_url = f"""https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri=http://localhost&response_type=code&scope=https://www.googleapis.com/auth/gmail.send%20https://www.googleapis.com/auth/gmail.compose&access_type=offline"""
+                
+                st.markdown(f"[🔗 Click here to authorize]({oauth_url})")
+                st.caption("After authorizing, you'll get a code. Paste it below:")
+                
+                auth_code = st.text_input("Authorization code:")
+                if st.button("Submit Code"):
+                    st.warning("This method requires additional setup. Use Option 1 instead.")
+        else:
+            st.info("Configure credentials in secrets first")
+    else:
+        st.success("✅ Authenticated with Gmail!")
+        st.info("Token stored in session")
+        
+        if st.button("🔄 Clear Token"):
+            if 'token_data' in st.session_state:
+                del st.session_state.token_data
+            st.rerun()
 
 # Main form
 if 'token_data' in st.session_state:
@@ -269,41 +275,58 @@ if 'token_data' in st.session_state:
                 if success:
                     st.success(f"✅ {message}")
                     st.balloons()
-                    
-                    # Clear form
-                    if st.button("Send another email"):
-                        st.rerun()
                 else:
                     st.error(f"❌ {message}")
             else:
-                st.error("❌ Failed to connect to Gmail. Please re-authenticate.")
+                st.error("❌ Failed to connect to Gmail. Check your token.")
 else:
-    st.info("👈 Please authenticate with Gmail in the sidebar to start scheduling emails.")
+    st.info("👈 Please authenticate in the sidebar to start scheduling emails.")
     
-    with st.expander("ℹ️ How to use this app"):
+    with st.expander("ℹ️ Quick Start Guide"):
         st.markdown("""
-        ### Quick Start:
+        ### 🚀 How to get started:
         
-        1. **Configure credentials** (one-time setup):
-           - Add your credentials.json to Streamlit secrets
-           - Or upload it manually (temporary)
+        **Step 1: Get your token (one-time setup)**
         
-        2. **Authenticate with Gmail**:
-           - Click "Authenticate with Gmail" in sidebar
-           - Sign in with ps12049@usc.edu
-           - Grant permissions
+        1. Download this Python script and save as `get_token.py`:
         
-        3. **Start scheduling emails!**
-           - Enter recipient email
-           - Customize subject and intro
-           - Pick date/time
-           - Hit "Schedule Email"
+        ```python
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        import json
         
-        ### First-time authentication:
-        - You'll see "Google hasn't verified this app"
-        - Click "Continue" (it's your own app - totally safe!)
-        - Grant permission to send emails
-        - You only authenticate once per session!
+        SCOPES = ['https://www.googleapis.com/auth/gmail.send',
+                  'https://www.googleapis.com/auth/gmail.compose']
+        
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+        
+        print("\\nCopy this entire token:")
+        print("="*50)
+        print(creds.to_json())
+        print("="*50)
+        ```
+        
+        2. Put your `credentials.json` in the same folder
+        3. Run: `python get_token.py`
+        4. Browser will open → Sign in with ps12049@usc.edu
+        5. Copy the token JSON from terminal
+        
+        **Step 2: Paste token in sidebar**
+        
+        1. Go to sidebar → paste token → Save
+        2. You're authenticated!
+        
+        **Step 3: Schedule emails**
+        
+        - Enter recipient, subject, intro
+        - Pick date/time
+        - Hit "Schedule Email"
+        - Done!
+        
+        ---
+        
+        **Note:** Token stays valid for a while, but may need refresh eventually.
         """)
 
 # Footer
