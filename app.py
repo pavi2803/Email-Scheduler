@@ -14,8 +14,11 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send',
 
 # Template body
 TEMPLATE_BODY = """My Relevant experience includes:
+
  • Advanced Modeling: Built MAVeRiC-AD, a vision-language ensemble for Alzheimer's MRI classification (0.90 ROC-AUC across multi-site data). Responsible for dataset design, modeling, and multi-center validation.
+
  • End-to-End Delivery: Developed and deployed HIPAA-compliant risk prediction systems on 1.5M+ patient records using XGBoost/LightGBM with SHAP explainability—covering data engineering, modeling, evaluation, and operationalization.
+
  • System-Level Work: Experienced with reproducible pipelines, model tracking, scalable inference, and cross-functional collaboration with clinical and product teams.
 
 I'm exploring opportunities where I can contribute to both high-level ML strategy and hands-on development within healthcare AI. If your group is hiring, or if there's someone you'd recommend I connect with, I'd appreciate the guidance.
@@ -24,7 +27,7 @@ Thank you,
 Pavithra
 Website: https://pavi2803.notion.site/Pavithra-Senthilkumar-36e0d62aea2f4c8086fd279363c59b34
 LinkedIn: https://www.linkedin.com/in/pavithra-senthilkumar-2803/
-GitHub: [Your GitHub URL]"""
+GitHub: https://github.com/pavi2803"""
 
 def get_credentials_from_secrets():
     """Get credentials from Streamlit secrets or manual input"""
@@ -232,10 +235,19 @@ if 'token_data' in st.session_state:
     # Combine date and time
     scheduled_datetime = datetime.combine(schedule_date, schedule_time)
     
+
+    with col1:
+        recipient_first_name = st.text_input(
+            "First Name",
+            placeholder="John",
+            help="Will replace [First Name] in email"
+        )
+
+
     # Preview
     st.markdown("---")
     with st.expander("👁️ Preview Email"):
-        full_body = f"Hi [First Name],\n\n{company_intro}\n\n{TEMPLATE_BODY}" if company_intro else f"Hi [First Name],\n\n{TEMPLATE_BODY}"
+        full_body = f"Hi {recipient_first_name},\n\n{company_intro}\n\n{TEMPLATE_BODY}" if company_intro else f"Hi {recipient_first_name},\n\n{TEMPLATE_BODY}"
         
         st.markdown(f"**To:** {recipient_email or '[Recipient Email]'}")
         st.markdown(f"**Subject:** {subject_line}")
@@ -257,7 +269,7 @@ if 'token_data' in st.session_state:
             st.error("❌ Please enter custom company introduction")
         else:
             # Create full email body
-            full_body = f"Hi [First Name],\n\n{company_intro}\n\n{TEMPLATE_BODY}"
+            full_body = f"Hi {recipient_first_name},\n\n{company_intro}\n\n{TEMPLATE_BODY}"
             
             # Get Gmail service
             service = get_gmail_service()
