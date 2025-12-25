@@ -28,7 +28,7 @@ TEMPLATE_BODY = """
 
 <p>Thank you,<br>
 Pavithra<br>
-<a href="https://pavi2803.notion.site/Pavithra-Senthilkumar-36e0d62aea2f4c8086fd279363c59b34">Website</a> | 
+<a href="https://pavi2803.github.io/pavithrasenthilkumar.github.io/">Website</a> | 
 <a href="https://www.linkedin.com/in/pavithra-senthilkumar-2803/">LinkedIn</a> | 
 <a href="https://github.com/pavi2803">GitHub</a></p>
 """
