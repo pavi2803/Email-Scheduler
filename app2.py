@@ -13,19 +13,25 @@ SCOPES = [
     'https://www.googleapis.com/auth/gmail.send'
 ]
 
-# ---------------- TEMPLATE ---------------- #
+# ---------------- TEMPLATES ---------------- #
 
-TEMPLATE_BODY = """
-<p> My Relevant Experiences Include: </p>
+RECRUITER_TEMPLATE = """
+<p>Relevant experience includes:</p>
+<p><b>•</b> Built machine learning models for medical images with ~0.90 ROC-AUC across multi-site data, owning dataset design, modeling, and validation.</p>
+<p><b>•</b> Developed and deployed large-scale risk prediction models on 1.5M+ records, including feature engineering, explainability, and production workflows.</p>
+<p><b>•</b> Experienced with reproducible pipelines, model tracking, scalable inference, and collaborating with cross-functional teams.</p>
+<p>I'm exploring opportunities to contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
+"""
 
-<p><b>• Advanced Modeling:</b> Built MAVeRiC-AD, a vision-language ensemble for Alzheimer's MRI classification (0.90 ROC-AUC across multi-site data). Responsible for dataset design, modeling, and multi-center validation.</p>
+HIRING_MANAGER_TEMPLATE = """
+<p>Relevant experience includes:</p>
+<p><b>• Applied ML & Modeling:</b> Built a vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
+<p><b>• End-to-End ML Delivery:</b> Developed and deployed large-scale risk prediction models on 1.5M+ records using XGBoost/LightGBM, including feature engineering, explainability, evaluation, and production workflows.</p>
+<p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
+<p>I'm exploring opportunities where I can contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
+"""
 
-<p><b>• End-to-End Delivery:</b> Developed and deployed HIPAA-compliant risk prediction systems on 1.5M+ patient records using XGBoost/LightGBM with SHAP explainability—covering data engineering, modeling, evaluation, and operationalization.</p>
-
-<p><b>• System-Level Work:</b> Experienced with reproducible pipelines, model tracking, scalable inference, and cross-functional collaboration with clinical and product teams.</p>
-
-<p>I'm exploring opportunities where I can contribute to both high-level ML strategy and hands-on development within healthcare AI. If your group is hiring, or if there's someone you'd recommend I connect with, I'd appreciate the guidance.</p>
-
+SIGNATURE = """
 <p>Thank you,<br>
 Pavithra<br>
 <a href="https://pavi2803.github.io/pavithrasenthilkumar.github.io/">Website</a> | 
@@ -81,7 +87,7 @@ def create_draft(service, to, subject, body):
 # ---------------- UI ---------------- #
 
 st.set_page_config(page_title="Gmail Draft Generator", layout="wide")
-st.title("📝 Gmail Draft Generator")
+st.title("📝 Draft Generator")
 st.caption("Creates Gmail drafts. Schedule send inside Gmail.")
 
 # ---------- SIDEBAR AUTH ---------- #
@@ -134,11 +140,24 @@ if 'token_data' in st.session_state:
         placeholder="John"
     )
 
+    # NEW: Recipient type selector
+    recipient_type = st.radio(
+        "Recipient Type",
+        options=["Recruiter", "Hiring Manager / Technical Contact"],
+        horizontal=True
+    )
+
     company_intro = st.text_area(
-    "Custom Company Intro",
-    height=150,
-    value="I’ve been following your team’s work in AI-driven techniques to prioritize cases, improve patient-status decisions, and reduce denial risk; and my background aligns closely with the problems your group focuses on at Optum."
-)
+        "Custom Company Intro",
+        height=150,
+        value="I've been following your team's work in AI-driven techniques to prioritize cases, improve patient-status decisions, and reduce denial risk; and my background aligns closely with the problems your group focuses on at Optum."
+    )
+
+    # Select template based on recipient type
+    if recipient_type == "Recruiter":
+        experience_template = RECRUITER_TEMPLATE
+    else:
+        experience_template = HIRING_MANAGER_TEMPLATE
 
     # ---------- PREVIEW ---------- #
 
@@ -147,7 +166,8 @@ if 'token_data' in st.session_state:
         body_html = f"""
         <p>Hi {recipient_name},</p>
         <p>{company_intro}</p>
-        {TEMPLATE_BODY}
+        {experience_template}
+        {SIGNATURE}
         """
         st.markdown(f"**To:** {recipient_email}<br>**Subject:** {subject_line}<br><br>", unsafe_allow_html=True)
         st.markdown(body_html, unsafe_allow_html=True)
@@ -167,7 +187,7 @@ if 'token_data' in st.session_state:
                     service,
                     recipient_email,
                     subject_line,
-                    body_html  # <-- use body_html instead of undefined 'body'
+                    body_html
                 )
                 st.success("Draft created successfully!")
                 st.info("Open Gmail → Drafts → Schedule Send")
