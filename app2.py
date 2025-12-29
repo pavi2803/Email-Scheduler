@@ -16,7 +16,7 @@ SCOPES = [
 # ---------------- TEMPLATES ---------------- #
 
 RECRUITER_TEMPLATE = """
-<p>Relevant experience includes:</p>
+<p>My Relevant experience includes:</p>
 <p><b>•</b> Built machine learning models for medical images with ~0.90 ROC-AUC across multi-site data, owning dataset design, modeling, and validation.</p>
 <p><b>•</b> Developed and deployed large-scale risk prediction models on 1.5M+ records, including feature engineering, explainability, and production workflows.</p>
 <p><b>•</b> Experienced with reproducible pipelines, model tracking, scalable inference, and collaborating with cross-functional teams.</p>
@@ -24,7 +24,7 @@ RECRUITER_TEMPLATE = """
 """
 
 HIRING_MANAGER_TEMPLATE = """
-<p>Relevant experience includes:</p>
+<p>My Relevant experience includes:</p>
 <p><b>• Applied ML & Modeling:</b> Built a vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
 <p><b>• End-to-End ML Delivery:</b> Developed and deployed large-scale risk prediction models on 1.5M+ records using XGBoost/LightGBM, including feature engineering, explainability, evaluation, and production workflows.</p>
 <p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
