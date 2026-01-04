@@ -25,7 +25,7 @@ RECRUITER_TEMPLATE = """
 
 HIRING_MANAGER_TEMPLATE = """
 <p>My Relevant experience includes:</p>
-<p><b>• Applied ML & Modeling:</b> Built a vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
+<p><b>• Applied ML and finetuning LLM:</b> Built an Agentic vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
 <p><b>• End-to-End ML Delivery:</b> Developed and deployed large-scale risk prediction models on 1.5M+ records using XGBoost/LightGBM, including feature engineering, explainability, evaluation, and production workflows.</p>
 <p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
 <p>I'm exploring opportunities where I can contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
