@@ -38,7 +38,9 @@ SOFTWARE_RECRUITER = """
 <p><b>• System Architecture & Performance:</b> Implemented distributed systems with performance optimization, achieving ~2× throughput improvements through efficient resource management and parallel processing.</p>
 <p><b>• Full-Stack Development & Deployment:</b> Built and deployed production applications with end-to-end ownership, including API development, cloud infrastructure (AWS), CI/CD pipelines, and monitoring.</p>
 <p>• Former Software Engineer Intern at Satyukt Analytics and ML Engineer at Keck, EXL Service</p>
-<p>I'm exploring software engineering opportunities where I can contribute to building scalable systems and robust applications.</p>
+<p>I’m Inspired by Amazon’s customer-obsessed engineering culture and see strong alignment with my software engineering background.</p>
+<p>I have attached my Resume, which outlines my background and experience. I’d welcome the opportunity to discuss how I could contribute to building scalable, customer-focused systems at Amazon.</p>
+<p>Thank you for your time and consideration.</p>
 """
 
 
