@@ -4,6 +4,7 @@ from email.mime.text import MIMEText
 import json
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -30,6 +31,16 @@ HIRING_MANAGER_TEMPLATE = """
 <p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
 <p>I'm exploring opportunities where I can contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
 """
+
+SOFTWARE_RECRUITER = """
+<p>My Relevant experience includes:</p>
+<p><b>• Backend Development & Data Pipelines:</b> Engineered scalable data workflows using Apache Spark and Hive SQL, processing 1.5M+ records with optimized ETL pipelines and database integrations.</p>
+<p><b>• System Architecture & Performance:</b> Implemented distributed systems with performance optimization, achieving ~2× throughput improvements through efficient resource management and parallel processing.</p>
+<p><b>• Full-Stack Development & Deployment:</b> Built and deployed production applications with end-to-end ownership, including API development, cloud infrastructure (AWS), CI/CD pipelines, and monitoring.</p>
+<p>• Former Software Engineer Intern at Satyukt Analytics and ML Engineer at Keck, EXL Service</p>
+<p>I'm exploring software engineering opportunities where I can contribute to building scalable systems and robust applications.</p>
+"""
+
 
 SIGNATURE = """
 <p>Thank you,<br>
@@ -140,10 +151,10 @@ if 'token_data' in st.session_state:
         placeholder="John"
     )
 
-    # NEW: Recipient type selector
+    # Updated: Three recipient type options
     recipient_type = st.radio(
         "Recipient Type",
-        options=["Recruiter", "Hiring Manager / Technical Contact"],
+        options=["Recruiter", "Hiring Manager / Technical Contact", "Software Hiring Manager"],
         horizontal=True
     )
 
@@ -156,8 +167,10 @@ if 'token_data' in st.session_state:
     # Select template based on recipient type
     if recipient_type == "Recruiter":
         experience_template = RECRUITER_TEMPLATE
-    else:
+    elif recipient_type == "Hiring Manager / Technical Contact":
         experience_template = HIRING_MANAGER_TEMPLATE
+    else:  # Software Hiring Manager
+        experience_template = SOFTWARE_RECRUITER
 
     # ---------- PREVIEW ---------- #
 
