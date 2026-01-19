@@ -239,7 +239,7 @@ if 'token_data' in st.session_state:
             if 'ml_resume_data' in st.session_state:
                 resume_data = st.session_state.ml_resume_data
                 resume_filename = st.session_state.ml_resume_name
-                resume_text = "<p>I have attached my ML/Data Science resume, which outlines my background and experience in detail.</p>"
+                resume_text = "<p>I have attached my resume, which outlines my background and experience in detail.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
                 st.warning("⚠️ Please upload your ML/Data Science resume in the sidebar")
@@ -247,7 +247,7 @@ if 'token_data' in st.session_state:
             if 'swe_resume_data' in st.session_state:
                 resume_data = st.session_state.swe_resume_data
                 resume_filename = st.session_state.swe_resume_name
-                resume_text = "<p>I have attached my Software Engineering resume, which outlines my background and experience in detail.</p>"
+                resume_text = "<p>I have attached my resume, which outlines my background and experience in detail.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
                 st.warning("⚠️ Please upload your Software Engineering resume in the sidebar")
