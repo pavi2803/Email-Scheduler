@@ -1,6 +1,8 @@
 import streamlit as st
 import base64
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 import json
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -38,9 +40,7 @@ SOFTWARE_RECRUITER = """
 <p><b>• System Architecture & Performance:</b> Implemented distributed systems with performance optimization, achieving ~2× throughput improvements through efficient resource management and parallel processing.</p>
 <p><b>• Full-Stack Development & Deployment:</b> Built and deployed production applications with end-to-end ownership, including API development, cloud infrastructure (AWS), CI/CD pipelines, and monitoring.</p>
 <p>• Former Software Engineer Intern at Satyukt Analytics and ML Engineer at Keck, EXL Service</p>
-<p>I’m Inspired by Amazon’s customer-obsessed engineering culture and see strong alignment with my software engineering background.</p>
-<p>I have attached my Resume, which outlines my background and experience. I’d welcome the opportunity to discuss how I could contribute to building scalable, customer-focused systems at Amazon.</p>
-<p>Thank you for your time and consideration.</p>
+<p>I'm exploring software engineering opportunities where I can contribute to building scalable systems and robust applications.</p>
 """
 
 
@@ -72,24 +72,29 @@ def get_gmail_service():
 
 # ---------------- GMAIL HELPERS ---------------- #
 
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-
-def create_message(to, subject, body_html):
-    """Create an HTML email message"""
-    message = MIMEMultipart("alternative")
+def create_message_with_attachment(to, subject, body_html, attachment_data=None, attachment_filename=None):
+    """Create an HTML email message with optional attachment"""
+    message = MIMEMultipart("mixed")
     message['to'] = to
     message['subject'] = subject
 
-    # HTML part
+    # Create the HTML part
+    msg_alternative = MIMEMultipart("alternative")
     html_part = MIMEText(body_html, "html")
-    message.attach(html_part)
+    msg_alternative.attach(html_part)
+    message.attach(msg_alternative)
+
+    # Add attachment if provided
+    if attachment_data and attachment_filename:
+        attachment = MIMEApplication(attachment_data, _subtype="pdf")
+        attachment.add_header('Content-Disposition', 'attachment', filename=attachment_filename)
+        message.attach(attachment)
 
     return {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
 
-def create_draft(service, to, subject, body):
-    message = create_message(to, subject, body)
+def create_draft(service, to, subject, body, attachment_data=None, attachment_filename=None):
+    message = create_message_with_attachment(to, subject, body, attachment_data, attachment_filename)
     draft = service.users().drafts().create(
         userId='me',
         body={'message': message}
@@ -103,7 +108,7 @@ st.set_page_config(page_title="Gmail Draft Generator", layout="wide")
 st.title("📝 Draft Generator")
 st.caption("Creates Gmail drafts. Schedule send inside Gmail.")
 
-# ---------- SIDEBAR AUTH ---------- #
+# ---------- SIDEBAR AUTH & RESUME UPLOAD ---------- #
 
 with st.sidebar:
     st.header("🔐 Authentication")
@@ -128,6 +133,33 @@ with st.sidebar:
         if st.button("Clear Token"):
             del st.session_state.token_data
             st.rerun()
+
+    st.markdown("---")
+    st.header("📄 Resume Files")
+    st.caption("Upload your resumes once - they'll be saved for this session")
+    
+    ml_resume = st.file_uploader(
+        "ML/Data Science Resume (PDF)",
+        type=['pdf'],
+        key="ml_resume"
+    )
+    
+    swe_resume = st.file_uploader(
+        "Software Engineering Resume (PDF)",
+        type=['pdf'],
+        key="swe_resume"
+    )
+    
+    # Store resumes in session state
+    if ml_resume:
+        st.session_state.ml_resume_data = ml_resume.read()
+        st.session_state.ml_resume_name = ml_resume.name
+        st.success(f"✓ ML Resume: {ml_resume.name}")
+    
+    if swe_resume:
+        st.session_state.swe_resume_data = swe_resume.read()
+        st.session_state.swe_resume_name = swe_resume.name
+        st.success(f"✓ SWE Resume: {swe_resume.name}")
 
 
 # ---------- MAIN FORM ---------- #
@@ -174,18 +206,72 @@ if 'token_data' in st.session_state:
     else:  # Software Hiring Manager
         experience_template = SOFTWARE_RECRUITER
 
+    # ---------- OPTIONAL SECTIONS ---------- #
+    
+    st.markdown("---")
+    st.subheader("Optional Sections")
+    
+    # Optional outro
+    include_outro = st.checkbox("Include closing paragraph")
+    outro_text = ""
+    if include_outro:
+        outro_text = st.text_area(
+            "Closing Paragraph",
+            height=100,
+            value="I'd welcome the opportunity to discuss how I could contribute to your team.",
+            placeholder="Add a custom closing paragraph..."
+        )
+    
+    # Optional resume attachment
+    include_resume = st.checkbox("Attach resume")
+    resume_data = None
+    resume_filename = None
+    resume_text = ""
+    
+    if include_resume:
+        resume_type = st.radio(
+            "Resume Type",
+            options=["ML/Data Science Resume", "Software Engineering Resume"],
+            horizontal=True
+        )
+        
+        if resume_type == "ML/Data Science Resume":
+            if 'ml_resume_data' in st.session_state:
+                resume_data = st.session_state.ml_resume_data
+                resume_filename = st.session_state.ml_resume_name
+                resume_text = "<p>I have attached my ML/Data Science resume, which outlines my background and experience in detail.</p>"
+                st.success(f"✓ Will attach: {resume_filename}")
+            else:
+                st.warning("⚠️ Please upload your ML/Data Science resume in the sidebar")
+        else:
+            if 'swe_resume_data' in st.session_state:
+                resume_data = st.session_state.swe_resume_data
+                resume_filename = st.session_state.swe_resume_name
+                resume_text = "<p>I have attached my Software Engineering resume, which outlines my background and experience in detail.</p>"
+                st.success(f"✓ Will attach: {resume_filename}")
+            else:
+                st.warning("⚠️ Please upload your Software Engineering resume in the sidebar")
+
     # ---------- PREVIEW ---------- #
 
     st.markdown("---")
     with st.expander("Preview Email"):
-        body_html = f"""
-        <p>Hi {recipient_name},</p>
-        <p>{company_intro}</p>
-        {experience_template}
-        {SIGNATURE}
-        """
+        # Build email body
+        body_html = f"<p>Hi {recipient_name},</p>\n<p>{company_intro}</p>\n{experience_template}"
+        
+        if outro_text:
+            body_html += f"\n<p>{outro_text}</p>"
+        
+        if resume_text:
+            body_html += f"\n{resume_text}"
+        
+        body_html += f"\n{SIGNATURE}"
+        
         st.markdown(f"**To:** {recipient_email}<br>**Subject:** {subject_line}<br><br>", unsafe_allow_html=True)
         st.markdown(body_html, unsafe_allow_html=True)
+        
+        if resume_data:
+            st.info(f"📎 Attachment: {resume_filename}")
 
 
     # ---------- CREATE DRAFT ---------- #
@@ -194,6 +280,8 @@ if 'token_data' in st.session_state:
     if st.button("📝 Create Gmail Draft", type="primary", use_container_width=True):
         if not recipient_email or not company_intro:
             st.error("Recipient and company intro required")
+        elif include_resume and not resume_data:
+            st.error("Please upload the selected resume type in the sidebar")
         else:
             service = get_gmail_service()
 
@@ -202,9 +290,11 @@ if 'token_data' in st.session_state:
                     service,
                     recipient_email,
                     subject_line,
-                    body_html
+                    body_html,
+                    resume_data,
+                    resume_filename
                 )
-                st.success("Draft created successfully!")
+                st.success("✅ Draft created successfully with attachment!" if resume_data else "✅ Draft created successfully!")
                 st.info("Open Gmail → Drafts → Schedule Send")
             except HttpError as e:
                 st.error(f"Gmail API error: {e}")
