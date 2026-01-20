@@ -23,7 +23,6 @@ RECRUITER_TEMPLATE = """
 <p><b>•</b> Built machine learning models for medical images with ~0.90 ROC-AUC across multi-site data, owning dataset design, modeling, and validation.</p>
 <p><b>•</b> Developed and deployed large-scale risk prediction models on 1.5M+ records, including feature engineering, explainability, and production workflows.</p>
 <p><b>•</b> Experienced with reproducible pipelines, model tracking, scalable inference, and collaborating with cross-functional teams.</p>
-<p>I'm exploring opportunities to contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
 """
 
 HIRING_MANAGER_TEMPLATE = """
@@ -31,7 +30,6 @@ HIRING_MANAGER_TEMPLATE = """
 <p><b>• Applied ML and finetuning LLM:</b> Built an Agentic vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
 <p><b>• End-to-End ML Delivery:</b> Developed and deployed large-scale risk prediction models on 1.5M+ records using XGBoost/LightGBM, including feature engineering, explainability, evaluation, and production workflows.</p>
 <p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
-<p>I'm exploring opportunities where I can contribute to both hands-on ML development and broader ML strategy. If your team is hiring or if there's someone you'd recommend I connect with, I'd appreciate your guidance!</p>
 """
 
 SOFTWARE_RECRUITER = """
@@ -39,8 +37,6 @@ SOFTWARE_RECRUITER = """
 <p><b>• Backend Development & Data Pipelines:</b> Engineered scalable data workflows using Apache Spark and Hive SQL, processing 1.5M+ records with optimized ETL pipelines and database integrations.</p>
 <p><b>• System Architecture & Performance:</b> Implemented distributed systems with performance optimization, achieving ~2× throughput improvements through efficient resource management and parallel processing.</p>
 <p><b>• Full-Stack Development & Deployment:</b> Built and deployed production applications with end-to-end ownership, including API development, cloud infrastructure (AWS), CI/CD pipelines, and monitoring.</p>
-<p>• Former Software Engineer Intern at Satyukt Analytics and ML Engineer at Keck, EXL Service</p>
-<p>I'm exploring software engineering opportunities where I can contribute to building scalable systems and robust applications.</p>
 """
 
 
