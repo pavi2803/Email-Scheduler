@@ -209,7 +209,7 @@ if 'token_data' in st.session_state:
         outro_text = st.text_area(
             "Closing Paragraph",
             height=100,
-            value="I'd welcome the opportunity to discuss how I could contribute to your team.",
+            value="Would love to briefly discuss how my background could support your team.",
             placeholder="Add a custom closing paragraph..."
         )
     
@@ -230,7 +230,7 @@ if 'token_data' in st.session_state:
             if 'ml_resume_data' in st.session_state:
                 resume_data = st.session_state.ml_resume_data
                 resume_filename = st.session_state.ml_resume_name
-                resume_text = "<p>I have attached my resume, which outlines my background and experience in detail.</p>"
+                resume_text = "<p>I have attached my resume for your reference.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
                 st.warning("⚠️ Please upload your ML/Data Science resume in the sidebar")
@@ -238,7 +238,7 @@ if 'token_data' in st.session_state:
             if 'swe_resume_data' in st.session_state:
                 resume_data = st.session_state.swe_resume_data
                 resume_filename = st.session_state.swe_resume_name
-                resume_text = "<p>I have attached my resume, which outlines my background and experience in detail.</p>"
+                resume_text = "<p>I have attached my resume for your reference.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
                 st.warning("⚠️ Please upload your Software Engineering resume in the sidebar")
