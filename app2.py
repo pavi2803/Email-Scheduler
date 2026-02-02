@@ -20,11 +20,11 @@ SCOPES = [
 # ---------------- TEMPLATES ---------------- #
 
 RECRUITER_TEMPLATE = """
-I recently published work on Agentic MoE based architecture for diagnosis of dimentia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.
+I recently published work on Agentic MoE based architecture for diagnosis of dementia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.
 """
 
 HIRING_MANAGER_TEMPLATE = """
-<p>I recently published work on Agentic MoE based architecture for diagnosis of dimentia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.</p>
+<p>I recently published work on Agentic MoE based architecture for diagnosis of dementia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.</p>
 """
 
 SOFTWARE_RECRUITER = """
