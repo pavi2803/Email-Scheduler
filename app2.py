@@ -20,17 +20,11 @@ SCOPES = [
 # ---------------- TEMPLATES ---------------- #
 
 RECRUITER_TEMPLATE = """
-<p>My Relevant experience includes:</p>
-<p><b>•</b> Built machine learning models for medical images with ~0.90 ROC-AUC across multi-site data, owning dataset design, modeling, and validation.</p>
-<p><b>•</b> Developed and deployed large-scale risk prediction models on 1.5M+ records, including feature engineering, explainability, and production workflows.</p>
-<p><b>•</b> Experienced with reproducible pipelines, model tracking, scalable inference, and collaborating with cross-functional teams.</p>
+I recently published work on Agentic MoE based architecture for diagnosis of dimentia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.
 """
 
 HIRING_MANAGER_TEMPLATE = """
-<p>My Relevant experience includes:</p>
-<p><b>• Applied ML and finetuning LLM:</b> Built an Agentic vision-language model for medical image classification, achieving ~0.90 ROC-AUC across multi-site data, with ownership across dataset design, modeling, and validation.</p>
-<p><b>• End-to-End ML Delivery:</b> Developed and deployed large-scale risk prediction models on 1.5M+ records using XGBoost/LightGBM, including feature engineering, explainability, evaluation, and production workflows.</p>
-<p><b>• ML Systems & Collaboration:</b> Experience with reproducible pipelines, model tracking, scalable inference, and close collaboration with cross-functional stakeholders.</p>
+<p>I recently published work on Agentic MoE based architecture for diagnosis of dimentia conditions, (link: [https://www.biorxiv.org/content/10.1101/2025.09.05.674598v1]) and have built end-to-end ML systems including vision-language models for medical imaging (0.90 ROC-AUC) and risk prediction on 1.5M+ records.</p>
 """
 
 SOFTWARE_RECRUITER = """
