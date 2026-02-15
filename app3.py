@@ -4,16 +4,22 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import json
+from datetime import datetime
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+import gspread
 
 # Gmail API scopes
 GMAIL_SCOPES = [
     'https://www.googleapis.com/auth/gmail.compose',
     'https://www.googleapis.com/auth/gmail.send'
 ]
+
+# Google Sheets scopes
+SHEETS_SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # ---------------- TEMPLATES ---------------- #
 
@@ -59,6 +65,17 @@ def get_gmail_service():
 
     return build('gmail', 'v1', credentials=creds)
 
+def get_sheets_client():
+    """Get Google Sheets client using service account"""
+    if 'sheets_creds' not in st.session_state:
+        return None
+    
+    creds = ServiceAccountCredentials.from_service_account_info(
+        st.session_state.sheets_creds,
+        scopes=SHEETS_SCOPES
+    )
+    return gspread.authorize(creds)
+
 # ---------------- GMAIL HELPERS ---------------- #
 
 def create_message_with_attachment(to, subject, body_html, attachment_data=None, attachment_filename=None):
@@ -89,41 +106,93 @@ def create_draft(service, to, subject, body, attachment_data=None, attachment_fi
     ).execute()
     return draft['id']
 
+def add_to_schedule_sheet(draft_id, recipient_email, recipient_name, subject, send_time):
+    """Add scheduled email to Google Sheet"""
+    try:
+        client = get_sheets_client()
+        if not client:
+            return False, "Sheets client not configured"
+        
+        sheet = client.open_by_key(st.session_state.sheet_id).sheet1
+        
+        row = [
+            draft_id,
+            recipient_email,
+            recipient_name,
+            subject,
+            send_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'pending',
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        ]
+        
+        sheet.append_row(row)
+        return True, "Added to schedule"
+    except Exception as e:
+        return False, f"Error: {str(e)}"
+
 # ---------------- UI ---------------- #
 
-st.set_page_config(page_title="Gmail Draft Generator", layout="wide")
-st.title("📝 Draft Generator")
-st.caption("Creates Gmail drafts. Schedule send inside Gmail.")
+st.set_page_config(page_title="Gmail Draft + Scheduler", layout="wide")
+st.title("📝 Draft Generator + Scheduler")
+st.caption("Creates Gmail drafts and schedules them for automatic sending")
 
-# ---------- SIDEBAR AUTH & RESUME UPLOAD ---------- #
+# ---------- SIDEBAR AUTH & CONFIG ---------- #
 
 with st.sidebar:
-    st.header("🔐 Authentication")
+    st.header("🔐 Gmail Authentication")
 
     if 'token_data' not in st.session_state:
         token_input = st.text_area(
             "Paste Gmail token JSON",
-            height=200,
+            height=150,
             placeholder='{"token": "...", "refresh_token": "..."}'
         )
 
-        if st.button("Save Token"):
+        if st.button("Save Gmail Token"):
             try:
                 st.session_state.token_data = json.loads(token_input)
-                st.success("Authenticated")
+                st.success("Gmail Authenticated")
                 st.rerun()
             except json.JSONDecodeError:
                 st.error("Invalid JSON")
-
     else:
-        st.success("Authenticated")
-        if st.button("Clear Token"):
+        st.success("✅ Gmail Authenticated")
+        if st.button("Clear Gmail Token"):
             del st.session_state.token_data
             st.rerun()
 
     st.markdown("---")
+    st.header("📊 Google Sheets Config")
+    
+    if 'sheets_creds' not in st.session_state:
+        sheets_creds_input = st.text_area(
+            "Paste Service Account JSON",
+            height=150,
+            placeholder='{"type": "service_account", ...}'
+        )
+        
+        sheet_id_input = st.text_input(
+            "Google Sheet ID",
+            placeholder="1ABC...XYZ"
+        )
+        
+        if st.button("Save Sheets Config"):
+            try:
+                st.session_state.sheets_creds = json.loads(sheets_creds_input)
+                st.session_state.sheet_id = sheet_id_input
+                st.success("Sheets Configured")
+                st.rerun()
+            except:
+                st.error("Invalid configuration")
+    else:
+        st.success("✅ Sheets Configured")
+        if st.button("Clear Sheets Config"):
+            del st.session_state.sheets_creds
+            del st.session_state.sheet_id
+            st.rerun()
+
+    st.markdown("---")
     st.header("📄 Resume Files")
-    st.caption("Upload your resumes once - they'll be saved for this session")
     
     ml_resume = st.file_uploader(
         "ML/Data Science Resume (PDF)",
@@ -137,17 +206,15 @@ with st.sidebar:
         key="swe_resume"
     )
     
-    # Store resumes in session state
     if ml_resume:
         st.session_state.ml_resume_data = ml_resume.read()
         st.session_state.ml_resume_name = ml_resume.name
-        st.success(f"✓ ML Resume: {ml_resume.name}")
+        st.success(f"✓ ML Resume")
     
     if swe_resume:
         st.session_state.swe_resume_data = swe_resume.read()
         st.session_state.swe_resume_name = swe_resume.name
-        st.success(f"✓ SWE Resume: {swe_resume.name}")
-
+        st.success(f"✓ SWE Resume")
 
 # ---------- MAIN FORM ---------- #
 
@@ -172,20 +239,19 @@ if 'token_data' in st.session_state:
         placeholder="John"
     )
 
-    # Updated: Three recipient type options
     recipient_type = st.radio(
-        "Experience Template",
-        options=["Agent Paper", "ML Systems", "Software"],
+        "Recipient Type",
+        options=["Agent Paper", "ML Systems", "Software Content"],
         horizontal=True
     )
 
     company_intro = st.text_area(
         "Custom Company Intro",
         height=150,
-        value="I've been following your team's work in AI-driven techniques to prioritize cases, improve patient-status decisions, and reduce denial risk; and my background aligns closely with the problems your group focuses on at Optum."
+        placeholder="I've been following your team's work..."
     )
 
-    # Select template based on recipient type
+    # Select template
     if recipient_type == "Agent Paper":
         experience_template = AGENT_PAPER_TEMPLATE
     elif recipient_type == "ML Systems":
@@ -198,18 +264,15 @@ if 'token_data' in st.session_state:
     st.markdown("---")
     st.subheader("Optional Sections")
     
-    # Optional outro
     include_outro = st.checkbox("Include closing paragraph")
     outro_text = ""
     if include_outro:
         outro_text = st.text_area(
             "Closing Paragraph",
             height=100,
-            value="Would love to briefly discuss how my background could support your team.",
-            placeholder="Add a custom closing paragraph..."
+            value="Would love to briefly discuss how my background could support your team."
         )
     
-    # Optional resume attachment
     include_resume = st.checkbox("Attach resume")
     resume_data = None
     resume_filename = None
@@ -229,7 +292,7 @@ if 'token_data' in st.session_state:
                 resume_text = "<p>I have attached my resume for your reference.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
-                st.warning("⚠️ Please upload your ML/Data Science resume in the sidebar")
+                st.warning("⚠️ Upload ML resume in sidebar")
         else:
             if 'swe_resume_data' in st.session_state:
                 resume_data = st.session_state.swe_resume_data
@@ -237,13 +300,35 @@ if 'token_data' in st.session_state:
                 resume_text = "<p>I have attached my resume for your reference.</p>"
                 st.success(f"✓ Will attach: {resume_filename}")
             else:
-                st.warning("⚠️ Please upload your Software Engineering resume in the sidebar")
+                st.warning("⚠️ Upload SWE resume in sidebar")
+
+    # ---------- SEND OPTIONS ---------- #
+    
+    st.markdown("---")
+    st.subheader("📅 Send Options")
+    
+    send_mode = st.radio(
+        "When to send:",
+        ["Create Draft Only", "Schedule for Later"],
+        horizontal=True
+    )
+    
+    send_datetime = None
+    if send_mode == "Schedule for Later":
+        if 'sheets_creds' not in st.session_state:
+            st.warning("⚠️ Configure Google Sheets in sidebar to enable scheduling")
+        else:
+            send_datetime = st.datetime_input(
+                "Send Date & Time",
+                value=datetime.now(),
+                min_value=datetime.now()
+            )
+            st.info(f"⏰ Will send at: {send_datetime.strftime('%B %d, %Y at %I:%M %p')}")
 
     # ---------- PREVIEW ---------- #
 
     st.markdown("---")
     with st.expander("Preview Email"):
-        # Build email body
         body_html = f"<p>Hi {recipient_name},</p>\n<p>{company_intro}</p>\n{experience_template}"
         
         if outro_text:
@@ -260,19 +345,24 @@ if 'token_data' in st.session_state:
         if resume_data:
             st.info(f"📎 Attachment: {resume_filename}")
 
-
-    # ---------- CREATE DRAFT ---------- #
+    # ---------- ACTION BUTTON ---------- #
 
     st.markdown("---")
-    if st.button("📝 Create Gmail Draft", type="primary", use_container_width=True):
-        if not recipient_email or not company_intro:
-            st.error("Recipient and company intro required")
+    
+    button_text = "📝 Create Draft" if send_mode == "Create Draft Only" else f"⏰ Schedule for {send_datetime.strftime('%I:%M %p') if send_datetime else 'Later'}"
+    
+    if st.button(button_text, type="primary", use_container_width=True):
+        if not recipient_email or not recipient_name or not company_intro:
+            st.error("❌ Fill in all required fields")
         elif include_resume and not resume_data:
-            st.error("Please upload the selected resume type in the sidebar")
+            st.error("❌ Upload selected resume type")
+        elif send_mode == "Schedule for Later" and 'sheets_creds' not in st.session_state:
+            st.error("❌ Configure Google Sheets for scheduling")
         else:
             service = get_gmail_service()
 
             try:
+                # Create draft
                 draft_id = create_draft(
                     service,
                     recipient_email,
@@ -281,11 +371,29 @@ if 'token_data' in st.session_state:
                     resume_data,
                     resume_filename
                 )
-                st.success("✅ Draft created successfully with attachment!" if resume_data else "✅ Draft created successfully!")
-                st.info("Open Gmail → Drafts → Schedule Send")
+                
+                if send_mode == "Create Draft Only":
+                    st.success("✅ Draft created in Gmail!")
+                    st.info("📧 Open Gmail → Drafts → Schedule Send")
+                else:
+                    # Add to schedule
+                    success, message = add_to_schedule_sheet(
+                        draft_id,
+                        recipient_email,
+                        recipient_name,
+                        subject_line,
+                        send_datetime
+                    )
+                    
+                    if success:
+                        st.success(f"✅ Draft created and scheduled for {send_datetime.strftime('%B %d, %I:%M %p')}!")
+                        st.info("🤖 GitHub Actions will send it automatically")
+                        st.balloons()
+                    else:
+                        st.error(f"❌ {message}")
+                        
             except HttpError as e:
-                st.error(f"Gmail API error: {e}")
-
+                st.error(f"❌ Gmail API error: {e}")
 
 else:
-    st.info("Authenticate to start creating drafts")
+    st.info("👈 Authenticate with Gmail to start")
